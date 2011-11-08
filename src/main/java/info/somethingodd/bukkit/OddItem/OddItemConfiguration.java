@@ -14,6 +14,8 @@
 package info.somethingodd.bukkit.OddItem;
 
 import info.somethingodd.bukkit.OddItem.bktree.BKTree;
+import info.somethingodd.bukkit.OddItem.bktree.DistanceStrategies;
+import info.somethingodd.bukkit.OddItem.bktree.DistanceStrategy;
 import info.somethingodd.bukkit.util.ItemSpecifier;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -49,37 +51,22 @@ public final class OddItemConfiguration {
         File file = new File(fileName);
         if (!file.exists())
             if (!writeConfig(file)) throw new Exception("Could not create configuration file!");
+
         OddItem.itemMap = new HashMap<String, ItemSpecifier>();
         OddItem.items = new TreeMap<ItemSpecifier, NavigableSet<String>>();
         OddItem.groups = new TreeMap<String, OddItemGroup>();
+
         Configuration configuration = new Configuration(file);
         configuration.load();
+
         version = configuration.getInt("listversion", 0);
-        String comparator = configuration.getString("comparator");
-        if (comparator != null) {
-            if (comparator.equalsIgnoreCase("c") || comparator.equalsIgnoreCase("caverphone")) {
-                OddItem.bktree = new BKTree<String>("c");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using Caverphone for suggestions.");
-            } else if (comparator.equalsIgnoreCase("k") || comparator.equalsIgnoreCase("cologne")) {
-                OddItem.bktree = new BKTree<String>("k");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using ColognePhonetic for suggestions.");
-            } else if (comparator.equalsIgnoreCase("m") || comparator.equalsIgnoreCase("metaphone")) {
-                OddItem.bktree = new BKTree<String>("m");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using Metaphone for suggestions.");
-            } else if (comparator.equalsIgnoreCase("s") || comparator.equalsIgnoreCase("soundex")) {
-                OddItem.bktree = new BKTree<String>("s");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using SoundEx for suggestions.");
-            } else if (comparator.equalsIgnoreCase("r") || comparator.equalsIgnoreCase("refinedsoundex")) {
-                OddItem.bktree = new BKTree<String>("r");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using RefinedSoundEx for suggestions.");
-            } else {
-                OddItem.bktree = new BKTree<String>("l");
-                oddItemBase.log.info(oddItemBase.logPrefix + "Using Levenshtein for suggestions.");
-            }
-        } else {
-            OddItem.bktree = new BKTree<String>("l");
-            oddItemBase.log.info(oddItemBase.logPrefix + "Using Levenshtein for suggestions.");
+
+        DistanceStrategy<String> comparator = DistanceStrategies.get(configuration.getString("comparator"));
+        if (comparator == null) {
+            comparator = DistanceStrategies.get("levenshtein");
         }
+        OddItem.bktree = new BKTree<String>(comparator);
+        oddItemBase.log.info(oddItemBase.logPrefix + "Using " + comparator + " for suggestions.");
 
         ConfigurationNode itemsNode = configuration.getNode("items");
         for (Map.Entry<String, Object> entry : itemsNode.getAll().entrySet()) {

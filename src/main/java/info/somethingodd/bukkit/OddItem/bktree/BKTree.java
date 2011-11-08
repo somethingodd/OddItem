@@ -36,10 +36,10 @@ public class BKTree <E> {
 	private Node root = null;
 	private HashMap<E, Integer> matches;
 	private E bestTerm;
-    private Distance distance;
+    private final DistanceStrategy<E> distance;
 
-	public BKTree(String comparator) {
-		this.distance = new Distance(comparator);
+	public BKTree(DistanceStrategy<E> comparator) {
+		this.distance = comparator;
 	}
 
     public void add(E term) {
@@ -101,53 +101,6 @@ public class BKTree <E> {
 		returnMap.put(root.getBestTerm(), distance);
 		return returnMap;
 	}
-
-    private class Distance {
-        private Caverphone2 c = null;
-        private ColognePhonetic k = null;
-        private LevenshteinDistance l = new LevenshteinDistance();
-        private Metaphone m = null;
-        private RefinedSoundex r = null;
-        private Soundex s = null;
-
-        public Distance(String comparator) {
-            if (comparator.equals("c"))
-                this.c = new Caverphone2();
-            else if (comparator.equals("k"))
-                this.k = new ColognePhonetic();
-            else if (comparator.equals("m"))
-                this.m = new Metaphone();
-            else if (comparator.equals("r"))
-                this.r = new RefinedSoundex();
-            else if (comparator.equals("s"))
-                this.s = new Soundex();
-        }
-
-        public int distance(E a, E b) {
-            String x = (String) a;
-            String y = (String) b;
-            if (c != null) {
-                return l.distance(c.encode(x), c.encode(y));
-            } else if (k != null) {
-                return l.distance(k.encode(x), k.encode(y));
-            } else if (m != null) {
-                return l.distance(m.encode(x), m.encode(y));
-            } else if (r != null) {
-                try {
-                    return -r.difference(x, y);
-                } catch (EncoderException e) {
-                    e.printStackTrace();
-                }
-            } else if (s != null) {
-                try {
-                    return -s.difference(x, y);
-                } catch (EncoderException e) {
-                    e.printStackTrace();
-                }
-            }
-            return l.distance(x, y);
-        }
-    }
 
 	private class Node {
 
