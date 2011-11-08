@@ -14,54 +14,35 @@
 package info.somethingodd.bukkit.OddItem;
 
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Gordon Pettey (petteyg359@gmail.com)
  */
 public class OddItemGroup implements Iterable<ItemStack> {
-    private ConfigurationNode data = null;
-    private List<ItemStack> items = null;
-    private String name = null;
+    final String name;
+    final List<ItemStack> items;
 
-    public OddItemGroup() {
-    }
-
-    public OddItemGroup(List<ItemStack> i, ConfigurationNode data) {
-        items = Collections.synchronizedList(new ArrayList<ItemStack>());
-        for (ItemStack is : i)
-            items.add(is);
-        this.data = data;
-    }
-
-    public OddItemGroup(ConfigurationNode node) {
-        fromYAML(node);
-    }
-
-    public ConfigurationNode getData() {
-        return data;
-    }
-
-    public void setData(ConfigurationNode data) {
-        this.data = data;
+    public OddItemGroup(String name, Collection<ItemStack> items, ConfigurationNode data) {
+        this.name = name;
+        this.items = Collections.unmodifiableList(new ArrayList<ItemStack>(items));
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public List<ItemStack> getItems() {
+        return items;
+    }
+
+    public ItemStack get(int index) throws IndexOutOfBoundsException {
+        return items.get(index);
     }
 
     public void add(ItemStack itemStack) {
-        if (items == null) items = Collections.synchronizedList(new ArrayList<ItemStack>());
         items.add(itemStack);
     }
 
@@ -73,15 +54,13 @@ public class OddItemGroup implements Iterable<ItemStack> {
         return items.remove(index);
     }
 
-    @Override
-    public Iterator<ItemStack> iterator() {
-        if (items == null) items = Collections.synchronizedList(new ArrayList<ItemStack>());
-        return items.iterator();
+    public int size() {
+        return items.size();
     }
 
-    public int size() {
-        if (items != null) return items.size();
-        return 0;
+    @Override
+    public Iterator<ItemStack> iterator() {
+        return items.iterator();
     }
 
     /**
@@ -111,43 +90,16 @@ public class OddItemGroup implements Iterable<ItemStack> {
      * @return boolean group contains ItemStack
      */
     public boolean contains(ItemStack is, boolean durability, boolean quantity) {
-        if (items == null) return false;
         for (ItemStack i : items)
             if (OddItem.compare(is, i, durability, quantity)) return true;
         return false;
     }
 
-    public ItemStack get(int index) throws IndexOutOfBoundsException {
-        return items.get(index);
-    }
-
-    public ConfigurationNode toYAML() {
-        ConfigurationNode node = Configuration.getEmptyNode();
-        node.setProperty("data", data);
-        List<String> items = new ArrayList<String>();
-        Iterator<ItemStack> i = iterator();
-        while (i.hasNext()) {
-            ItemStack itemStack = i.next();
-            items.add(OddItem.getAliases(itemStack.getTypeId() + ";" + itemStack.getDurability()).get(0));
-        }
-        node.setProperty("items", items);
-        return node;
-    }
-
-    public void fromYAML(ConfigurationNode node) throws IllegalArgumentException {
-        data = node.getNode("data");
-        for (String item : node.getStringList("items", new ArrayList<String>())) {
-            items.add(OddItem.getItemStack(item));
-        }
-    }
-
     public String toString() {
-        Iterator<ItemStack> i = iterator();
-        List<String> items = new ArrayList<String>();
-        while (i.hasNext()) {
-            ItemStack itemStack = i.next();
-            items.add(OddItem.getAliases(itemStack.getTypeId() + ";" + itemStack.getDurability()).get(0));
+        List<String> itemNames = new ArrayList<String>();
+        for (ItemStack itemStack : items) {
+            itemNames.add(OddItem.getAliases(itemStack).first());
         }
-        return items.toString();
+        return itemNames.toString();
     }
 }

@@ -14,8 +14,10 @@
 package info.somethingodd.bukkit.OddItem;
 
 import info.somethingodd.bukkit.OddItem.bktree.BKTree;
+import info.somethingodd.bukkit.util.ItemSpecifier;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.config.Configuration;
 import org.bukkit.util.config.ConfigurationNode;
@@ -27,9 +29,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NavigableSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -49,9 +49,9 @@ public final class OddItemConfiguration {
         File file = new File(fileName);
         if (!file.exists())
             if (!writeConfig(file)) throw new Exception("Could not create configuration file!");
-        OddItem.itemMap = new ConcurrentHashMap<String, ItemStack>();
-        OddItem.items = new ConcurrentSkipListMap<String, NavigableSet<String>>();
-        OddItem.groups = new ConcurrentSkipListMap<String, OddItemGroup>();
+        OddItem.itemMap = new HashMap<String, ItemSpecifier>();
+        OddItem.items = new TreeMap<ItemSpecifier, NavigableSet<String>>();
+        OddItem.groups = new TreeMap<String, OddItemGroup>();
         Configuration configuration = new Configuration(file);
         configuration.load();
         version = configuration.getInt("listversion", 0);
@@ -80,45 +80,38 @@ public final class OddItemConfiguration {
             OddItem.bktree = new BKTree<String>("l");
             oddItemBase.log.info(oddItemBase.logPrefix + "Using Levenshtein for suggestions.");
         }
+
         ConfigurationNode itemsNode = configuration.getNode("items");
-        for (String i : itemsNode.getKeys()) {
-            Integer id;
-            Short d = 0;
-            Material m;
-            if (i.contains(";")) {
-                try {
-                    d = Short.parseShort(i.substring(i.indexOf(";") + 1));
-                    id = Integer.parseInt(i.substring(0, i.indexOf(";")));
-                    m = Material.getMaterial(id);
-                } catch (NumberFormatException e) {
-                    m = Material.getMaterial(i.substring(0, i.indexOf(";")));
-                    id = m.getId();
-                }
-            } else {
-                try {
-                    id = Integer.decode(i);
-                    m = Material.getMaterial(id);
-                } catch (NumberFormatException e) {
-                    m = Material.getMaterial(i);
-                    id = m.getId();
-                }
+        for (Map.Entry<String, Object> entry : itemsNode.getAll().entrySet()) {
+            // Parse the item ID
+            String keyString = entry.getKey();
+            ItemSpecifier key = ItemSpecifier.fromString(keyString);
+
+            // Warn if the item does not exist
+            if (key.getType() == null) {
+                oddItemBase.log.warning(oddItemBase.logPrefix + "Unknown item: " + keyString);
             }
-            if (OddItem.items.get(i) == null)
-                OddItem.items.put(i, new ConcurrentSkipListSet<String>(String.CASE_INSENSITIVE_ORDER));
-            List<String> itemAliases = new ArrayList<String>();
-            itemAliases.addAll(configuration.getStringList("items." + i, new ArrayList<String>()));
-            itemAliases.add(id + ";" + d);
-            // Add all aliases
-            OddItem.items.get(i).addAll(itemAliases);
-            if (m != null) {
-                for (String itemAlias : itemAliases) {
-                    OddItem.itemMap.put(itemAlias, new ItemStack(m, 1, d));
-                    OddItem.bktree.add(itemAlias);
+
+            // Get the set of aliases for this item
+            NavigableSet<String> itemAliases = OddItem.items.get(key);
+
+            // Create the set of aliases, if it does not exist already
+            if (itemAliases == null) {
+                itemAliases = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+                OddItem.items.put(key, itemAliases);
+            }
+
+            // Add all the aliases
+            if (entry.getValue() instanceof List) {
+                for (String alias : (List<String>) entry.getValue()) {
+                    alias = alias.toLowerCase();
+                    itemAliases.add(alias);
+                    OddItem.itemMap.put(alias, key);
+                    OddItem.bktree.add(alias);
                 }
-            } else {
-                oddItemBase.log.warning(oddItemBase.logPrefix + "Invalid format: " + i);
             }
         }
+
         ConfigurationNode groupsNode = configuration.getNode("groups");
         if (OddItem.groups != null) {
             for (String g : groupsNode.getKeys()) {
@@ -151,7 +144,7 @@ public final class OddItemConfiguration {
                     } catch (NullPointerException e) {
                         oddItemBase.log.warning(oddItemBase.logPrefix + "NPE adding ItemStack \"" + is + "\" to group " + g);
                     }
-                    OddItem.groups.put(g, new OddItemGroup(itemStackList, groupsNode.getNode(g + ".data")));
+                    OddItem.groups.put(g, new OddItemGroup(g, itemStackList, groupsNode.getNode(g + ".data")));
                 }
                 if (OddItem.groups.get(g) != null) oddItemBase.log.info(oddItemBase.logPrefix + "Group " + g + " added.");
             }

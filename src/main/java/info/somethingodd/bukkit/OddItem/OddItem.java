@@ -14,27 +14,21 @@
 package info.somethingodd.bukkit.OddItem;
 
 import info.somethingodd.bukkit.OddItem.bktree.BKTree;
+import info.somethingodd.bukkit.util.ItemSpecifier;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NavigableSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.*;
 
 /**
  * @author Gordon Pettey (petteyg359@gmail.com)
  */
 public final class OddItem extends OddItemBase {
-    protected static ConcurrentNavigableMap<String, NavigableSet<String>> items = null;
-    protected static ConcurrentNavigableMap<String, OddItemGroup> groups = null;
-    protected static ConcurrentMap<String, ItemStack> itemMap = null;
+    protected static NavigableMap<ItemSpecifier, NavigableSet<String>> items = null;
+    protected static NavigableMap<String, OddItemGroup> groups = null;
+    protected static Map<String, ItemSpecifier> itemMap = null;
     protected static BKTree<String> bktree = null;
 
     protected static void clear() {
@@ -204,8 +198,10 @@ public final class OddItem extends OddItemBase {
      */
     public static boolean contains(Inventory inventory, ItemStack itemStack, boolean durability, boolean quantity) {
         ItemStack[] contents = inventory.getContents();
-        for (int i = 0; i < contents.length; i++) {
-            if (compare(contents[i], itemStack, durability, quantity)) return true;
+        for (ItemStack content : contents) {
+            if (compare(content, itemStack, durability, quantity)) {
+                return true;
+            }
         }
         return false;
     }
@@ -217,26 +213,18 @@ public final class OddItem extends OddItemBase {
      * @param durability the item's damage value
      * @return list of aliases
      */
-    public static List<String> getAliases(int typeId, short durability) {
-        List<String> result = new ArrayList<String>();
-        Collection<String> aliases;
+    public static NavigableSet<String> getAliases(int typeId, short durability) {
+        return getAliases(new ItemSpecifier(typeId, durability));
+    }
 
-        // Durability can be omitted if it is zero
-        if (durability == 0) {
-            aliases = items.get(Integer.toString(typeId));
-            if (aliases != null) {
-                result.addAll(aliases);
-            }
-        }
-
-        // Try "typeId;durability" pair
-        aliases = items.get(typeId + ";" + durability);
-        if (aliases != null) {
-            result.addAll(aliases);
-        }
-
-        // Return the result
-        return result;
+    /**
+     * Gets all aliases for the item represented by an ItemSpecifier
+     *
+     * @param item the ItemSpecifier to use
+     * @return list of aliases
+     */
+    public static NavigableSet<String> getAliases(ItemSpecifier item) {
+        return items.get(item);
     }
 
     /**
@@ -245,8 +233,8 @@ public final class OddItem extends OddItemBase {
      * @param item the ItemStack to use
      * @return list of aliases
      */
-    public static List<String> getAliases(ItemStack item) {
-        return getAliases(item.getTypeId(), item.getDurability());
+    public static NavigableSet<String> getAliases(ItemStack item) {
+        return getAliases(ItemSpecifier.of(item));
     }
 
     /**
@@ -256,10 +244,10 @@ public final class OddItem extends OddItemBase {
      * @return list of aliases
      * @throws IllegalArgumentException if no such item exists
      */
-    public static List<String> getAliases(String query) throws IllegalArgumentException {
-        ItemStack itemStack = itemMap.get(query);
-        if (itemStack != null) {
-            return getAliases(itemStack);
+    public static NavigableSet<String> getAliases(String query) throws IllegalArgumentException {
+        ItemSpecifier item = itemMap.get(query);
+        if (item != null) {
+            return getAliases(item);
         } else {
             throw new IllegalArgumentException("No such item: " + query);
         }
@@ -332,7 +320,7 @@ public final class OddItem extends OddItemBase {
                 i = new ItemStack(Material.MAP, 1, (short) 0);
             }
         } else {
-            i = itemMap.get(query);
+            i = itemMap.get(query).toItemStack(quantity);
         }
         if (i != null && !query.startsWith("map")) {
             i.setAmount(quantity);
@@ -345,7 +333,14 @@ public final class OddItem extends OddItemBase {
      * @return Set&lt;ItemStack&gt; all defined items
      */
     public static Set<ItemStack> getItemStacks() {
-        return new HashSet<ItemStack>(itemMap.values());
+        Collection<ItemSpecifier> values = itemMap.values();
+        Set<ItemStack> result = new HashSet<ItemStack>();
+
+        for (ItemSpecifier specifier : values) {
+            result.add(specifier.toItemStack(1));
+        }
+
+        return result;
     }
 
     /**
@@ -358,16 +353,16 @@ public final class OddItem extends OddItemBase {
     public static int removeItem(Player player, ItemStack itemStack) {
         ItemStack[] inventory = player.getInventory().getContents();
         int amount = itemStack.getAmount();
-        for (int i = 0; i < inventory.length; i++) {
-            if (compare(inventory[i], itemStack)) {
-                if (amount > inventory[i].getAmount()) {
-                    amount -= inventory[i].getAmount();
-                    inventory[i].setAmount(0);
+        for (ItemStack slot : inventory) {
+            if (compare(slot, itemStack)) {
+                if (amount > slot.getAmount()) {
+                    amount -= slot.getAmount();
+                    slot.setAmount(0);
                 } else if (amount > 0) {
-                    inventory[i].setAmount(inventory[i].getAmount() - amount);
+                    slot.setAmount(slot.getAmount() - amount);
                     amount = 0;
                 } else {
-                    inventory[i].setAmount(0);
+                    slot.setAmount(0);
                 }
             }
             if (amount == 0) break;
