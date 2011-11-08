@@ -249,7 +249,7 @@ public final class OddItem extends OddItemBase {
         if (item != null) {
             return getAliases(item);
         } else {
-            throw new IllegalArgumentException("No such item: " + query);
+            throw new IllegalArgumentException(bktree.findBestWordMatch(query));
         }
     }
 

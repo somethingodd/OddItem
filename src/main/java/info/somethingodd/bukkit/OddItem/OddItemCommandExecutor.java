@@ -13,10 +13,13 @@
  */
 package info.somethingodd.bukkit.OddItem;
 
+import info.somethingodd.bukkit.util.ItemSpecifier;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import java.util.Collection;
 
 /**
  * @author Gordon Pettey (petteyg359@gmail.com)
@@ -58,14 +61,32 @@ public class OddItemCommandExecutor implements CommandExecutor {
                 }
                 break;
             case 2:
-                if (args[0].equals("alias")) {
-                    String message;
+                if (args[0].equals("alias") || args[0].equals("search")) {
+                    ItemSpecifier item;
                     try {
-                        message = OddItem.getAliases(args[1]).toString();
+                        item = ItemSpecifier.fromString(args[1]);
                     } catch (IllegalArgumentException e) {
-                        message = "no such item";
+                        item = null;
                     }
-                    sender.sendMessage(oddItemBase.logPrefix + message);
+
+                    Collection<String> aliases;
+                    String suggestion = null;
+                    try {
+                        if (item != null) {
+                            aliases = OddItem.getAliases(item);
+                        } else {
+                            aliases = OddItem.getAliases(args[1]);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        aliases = null;
+                        suggestion = e.getMessage();
+                    }
+
+                    if (aliases != null) {
+                        sender.sendMessage(oddItemBase.logPrefix + aliases);
+                    } else {
+                        sender.sendMessage(oddItemBase.logPrefix + " Could not find item: " + args[1] + ". Did you mean " + suggestion + "?");
+                    }
                     return true;
                 }
                 break;
