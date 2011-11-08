@@ -42,18 +42,6 @@ public class OddItemGroup implements Iterable<ItemStack> {
         return items.get(index);
     }
 
-    public void add(ItemStack itemStack) {
-        items.add(itemStack);
-    }
-
-    public boolean remove(ItemStack itemStack) {
-        return items.remove(itemStack);
-    }
-
-    public ItemStack remove(int index) {
-        return items.remove(index);
-    }
-
     public int size() {
         return items.size();
     }
