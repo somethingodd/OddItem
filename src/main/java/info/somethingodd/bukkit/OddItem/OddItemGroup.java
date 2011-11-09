@@ -24,10 +24,12 @@ import java.util.*;
 public class OddItemGroup implements Iterable<ItemStack> {
     final String name;
     final List<ItemStack> items;
+    final ConfigurationNode data;
 
-    public OddItemGroup(String name, Collection<ItemStack> items) {
+    public OddItemGroup(String name, Collection<ItemStack> items, ConfigurationNode data) {
         this.name = name;
         this.items = Collections.unmodifiableList(new ArrayList<ItemStack>(items));
+        this.data = data;
     }
 
     public String getName() {
@@ -36,6 +38,10 @@ public class OddItemGroup implements Iterable<ItemStack> {
 
     public List<ItemStack> getItems() {
         return items;
+    }
+
+    public ConfigurationNode getData() {
+        return data;
     }
 
     public ItemStack get(int index) throws IndexOutOfBoundsException {
