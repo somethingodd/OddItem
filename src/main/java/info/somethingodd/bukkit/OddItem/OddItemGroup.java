@@ -25,7 +25,7 @@ public class OddItemGroup implements Iterable<ItemStack> {
     final String name;
     final List<ItemStack> items;
 
-    public OddItemGroup(String name, Collection<ItemStack> items, ConfigurationNode data) {
+    public OddItemGroup(String name, Collection<ItemStack> items) {
         this.name = name;
         this.items = Collections.unmodifiableList(new ArrayList<ItemStack>(items));
     }

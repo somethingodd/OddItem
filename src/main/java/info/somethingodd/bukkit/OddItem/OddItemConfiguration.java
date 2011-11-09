@@ -131,7 +131,7 @@ public final class OddItemConfiguration {
                     } catch (NullPointerException e) {
                         oddItemBase.log.warning(oddItemBase.logPrefix + "NPE adding ItemStack \"" + is + "\" to group " + g);
                     }
-                    OddItem.groups.put(g, new OddItemGroup(g, itemStackList, groupsNode.getNode(g + ".data")));
+                    OddItem.groups.put(g, new OddItemGroup(g, itemStackList));
                 }
                 if (OddItem.groups.get(g) != null) oddItemBase.log.info(oddItemBase.logPrefix + "Group " + g + " added.");
             }
