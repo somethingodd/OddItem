@@ -4,13 +4,15 @@ package info.somethingodd.bukkit.OddItem.bktree;
  * http://en.wikipedia.org/wiki/Levenshtein_distance
  */
 
-public class LevenshteinDistance {
+public class LevenshteinDistance implements DistanceStrategy<String> {
+    private static final LevenshteinDistance instance = new LevenshteinDistance();
+    private LevenshteinDistance() {}
 
-	public int distance(Object object1, Object object2) {
+    public static LevenshteinDistance getInstance() {
+        return instance;
+    }
 
-		String string1 = (String) object1;
-		String string2 = (String) object2;
-
+	public int distance(String string1, String string2) {
 		int distance[][]; // distance matrix
         int n; // length of first string
         int m; // length of second string
@@ -60,7 +62,7 @@ public class LevenshteinDistance {
         return distance[n][m];
 	}
 
-	private int findMinimum(int a, int b, int c) {
+	private static int findMinimum(int a, int b, int c) {
         int min = a;
         if (b < min) {
             min = b;

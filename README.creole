@@ -13,7 +13,7 @@ This plugin allows creation of a single text file for custom item names (cstairs
 
 
 === Commands:
-* /odditem aliases <item>
+* /odditem search <item>
 Lists aliases for <item>
 * /odditem group <group>
 Lists items in <group>

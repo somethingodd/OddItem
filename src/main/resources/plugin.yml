@@ -8,8 +8,8 @@ commands:
     odditem:
         aliases: oi
         usage:  |
-                /<command> [aliases item]|[info]|[list]|[reload]
-                aliases - Lists aliases for item
+                /<command> [search item]|[info]|[list]|[reload]
+                search - Lists aliases for item
                 info - Shows number of items loaded.
 permissions:
     odditem:
@@ -24,4 +24,3 @@ permissions:
         default: true
     odditem.reload:
         default: op
-

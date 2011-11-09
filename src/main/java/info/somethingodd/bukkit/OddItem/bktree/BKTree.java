@@ -4,6 +4,7 @@ package info.somethingodd.bukkit.OddItem.bktree;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.language.*;
 
+import java.util.Map;
 import java.util.HashMap;
 
 /**
@@ -32,194 +33,142 @@ import java.util.HashMap;
 
 
 public class BKTree <E> {
+    private Node root = null;
+    private E bestTerm;
+    private final DistanceStrategy<E> distance;
 
-	private Node root = null;
-	private HashMap<E, Integer> matches;
-	private E bestTerm;
-    private Distance distance;
-
-	public BKTree(String comparator) {
-		this.distance = new Distance(comparator);
-	}
+    public BKTree(DistanceStrategy<E> comparator) {
+        this.distance = comparator;
+    }
 
     public void add(E term) {
-		if(root != null) {
-			root.add(term);
-		}
-		else {
-			root = new Node(term);
-		}
-	}
+        if(root != null) {
+            root.add(term);
+        } else {
+            root = new Node(term);
+        }
+    }
 
     public void clear() {
         root.children.clear();
         root = null;
     }
 
-	/**
-	 * This method will find all the close matching Objects within
-	 * a certain threshold.  For instance, for search for similar
-	 * strings, threshold set to 1 will return all the strings that
-	 * are off by 1 edit distance.
-	 * @param searchObject
-	 * @param threshold
-	 * @return matching objects
-	 */
-	public HashMap<E, Integer> query(E searchObject, int threshold) {
-		matches = new HashMap<E,Integer>();
-		root.query(searchObject, threshold, matches);
-		return matches;
-	}
-
-	/**
-	 * Attempts to find the closest match to the search term.
-	 * @param term
-	 * @return the edit distance of the best match
-	 */
-	public int find(E term) {
-		return root.findBestMatch(term, Integer.MAX_VALUE);
-	}
-
-	/**
-	 * Attempts to find the closest match to the search term.
-	 * @param term
-	 * @return a match that is within the best edit distance of the search term.
-	 */
-	public E findBestWordMatch(E term) {
-		root.findBestMatch(term, Integer.MAX_VALUE);
-		return root.getBestTerm();
-	}
-
-	/**
-	 * Attempts to find the closest match to the search term.
-	 * @param term
-	 * @return a match that is within the best edit distance of the search term.
-	 */
-	public HashMap<E,Integer> findBestWordMatchWithDistance(E term) {
-		int distance = root.findBestMatch(term, Integer.MAX_VALUE);
-		HashMap<E, Integer> returnMap = new HashMap<E, Integer>();
-		returnMap.put(root.getBestTerm(), distance);
-		return returnMap;
-	}
-
-    private class Distance {
-        private Caverphone2 c = null;
-        private ColognePhonetic k = null;
-        private LevenshteinDistance l = new LevenshteinDistance();
-        private Metaphone m = null;
-        private RefinedSoundex r = null;
-        private Soundex s = null;
-
-        public Distance(String comparator) {
-            if (comparator.equals("c"))
-                this.c = new Caverphone2();
-            else if (comparator.equals("k"))
-                this.k = new ColognePhonetic();
-            else if (comparator.equals("m"))
-                this.m = new Metaphone();
-            else if (comparator.equals("r"))
-                this.r = new RefinedSoundex();
-            else if (comparator.equals("s"))
-                this.s = new Soundex();
-        }
-
-        public int distance(E a, E b) {
-            String x = (String) a;
-            String y = (String) b;
-            if (c != null) {
-                return l.distance(c.encode(x), c.encode(y));
-            } else if (k != null) {
-                return l.distance(k.encode(x), k.encode(y));
-            } else if (m != null) {
-                return l.distance(m.encode(x), m.encode(y));
-            } else if (r != null) {
-                try {
-                    return -r.difference(x, y);
-                } catch (EncoderException e) {
-                    e.printStackTrace();
-                }
-            } else if (s != null) {
-                try {
-                    return -s.difference(x, y);
-                } catch (EncoderException e) {
-                    e.printStackTrace();
-                }
-            }
-            return l.distance(x, y);
-        }
+    /**
+     * This method will find all the close matching Objects within
+     * a certain threshold.  For instance, for search for similar
+     * strings, threshold set to 1 will return all the strings that
+     * are off by 1 edit distance.
+     * @param searchObject
+     * @param threshold
+     * @return matching objects
+     */
+    public Map<E, Integer> query(E searchObject, int threshold) {
+        Map<E, Integer> matches = new HashMap<E, Integer>();
+        root.query(searchObject, threshold, matches);
+        return matches;
     }
 
-	private class Node {
+    /**
+     * Attempts to find the closest match to the search term.
+     * @param term
+     * @return the edit distance of the best match
+     */
+    public int find(E term) {
+        return root.findBestMatch(term, Integer.MAX_VALUE);
+    }
 
-		E term;
-		HashMap<Integer, Node> children;
+    /**
+     * Attempts to find the closest match to the search term.
+     * @param term
+     * @return a match that is within the best edit distance of the search term.
+     */
+    public E findBestWordMatch(E term) {
+        root.findBestMatch(term, Integer.MAX_VALUE);
+        return root.getBestTerm();
+    }
 
-		public Node(E term) {
-			this.term = term;
-			children = new HashMap<Integer, Node>();
-		}
+    /**
+     * Attempts to find the closest match to the search term.
+     * @param term
+     * @return a match that is within the best edit distance of the search term.
+     */
+    public Map<E,Integer> findBestWordMatchWithDistance(E term) {
+        int distance = root.findBestMatch(term, Integer.MAX_VALUE);
+        Map<E, Integer> returnMap = new HashMap<E, Integer>();
+        returnMap.put(root.getBestTerm(), distance);
+        return returnMap;
+    }
 
-		public void add(E term) {
-			int score = distance.distance(term, this.term);
+    private class Node {
+        private final E term;
+        private final Map<Integer, Node> children;
 
-			Node child = children.get(score);
-			if(child != null) {
-				child.add(term);
-			}
-			else {
-				children.put(score, new Node(term));
-			}
-		}
+        public Node(E term) {
+            this.term = term;
+            this.children = new HashMap<Integer, Node>();
+        }
 
-		public int findBestMatch(E term, int bestDistance) {
-			int distanceAtNode = distance.distance(term, this.term);
+        public void add(E term) {
+            int score = distance.distance(term, this.term);
 
-//			System.out.println("term = " + term + ", this.term = " + this.term + ", distance = " + distanceAtNode);
+            Node child = children.get(score);
+            if(child != null) {
+                child.add(term);
+            } else {
+                children.put(score, new Node(term));
+            }
+        }
 
-//			if(distanceAtNode == 1) {
-//				return distanceAtNode;
-//			}
+        public int findBestMatch(E term, int bestDistance) {
+            int distanceAtNode = distance.distance(term, this.term);
 
-			if(distanceAtNode < bestDistance) {
-				bestDistance = distanceAtNode;
-				bestTerm = this.term;
-			}
+//            System.out.println("term = " + term + ", this.term = " + this.term + ", distance = " + distanceAtNode);
 
-			int possibleBest = bestDistance;
+//            if(distanceAtNode == 1) {
+//                return distanceAtNode;
+//            }
 
-			for (Integer score : children.keySet()) {
-				if(score < distanceAtNode + bestDistance ) {
-					possibleBest = children.get(score).findBestMatch(term, bestDistance);
-					if(possibleBest < bestDistance) {
-						bestDistance = possibleBest;
-					}
-				}
-			}
-			return bestDistance;
-		}
+            if(distanceAtNode < bestDistance) {
+                bestDistance = distanceAtNode;
+                bestTerm = this.term;
+            }
 
-		public E getBestTerm() {
-			return bestTerm;
-		}
+            int possibleBest = bestDistance;
 
-		public void query(E term, int threshold, HashMap<E, Integer> collected) {
-			int distanceAtNode = distance.distance(term, this.term);
+            for (Integer score : children.keySet()) {
+                if(score < distanceAtNode + bestDistance) {
+                    possibleBest = children.get(score).findBestMatch(term, bestDistance);
+                    if(possibleBest < bestDistance) {
+                        bestDistance = possibleBest;
+                    }
+                }
+            }
+            return bestDistance;
+        }
 
-			if(distanceAtNode == threshold) {
-				collected.put(this.term, distanceAtNode);
-				return;
-			}
+        public E getBestTerm() {
+            return bestTerm;
+        }
 
-			if(distanceAtNode < threshold) {
-				collected.put(this.term, distanceAtNode);
-			}
+        public void query(E term, int threshold, Map<E, Integer> collected) {
+            int distanceAtNode = distance.distance(term, this.term);
 
-			for (int score = distanceAtNode-threshold; score <= threshold+distanceAtNode; score++) {
-				Node child = children.get(score);
-				if(child != null) {
-					child.query(term, threshold, collected);
-				}
-			}
-		}
-	}
+            if(distanceAtNode == threshold) {
+                collected.put(this.term, distanceAtNode);
+                return;
+            }
+
+            if(distanceAtNode < threshold) {
+                collected.put(this.term, distanceAtNode);
+            }
+
+            for (int score = distanceAtNode-threshold; score <= threshold+distanceAtNode; score++) {
+                Node child = children.get(score);
+                if(child != null) {
+                    child.query(term, threshold, collected);
+                }
+            }
+        }
+    }
 }
