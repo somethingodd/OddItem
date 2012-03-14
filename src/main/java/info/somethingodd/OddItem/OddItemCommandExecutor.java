@@ -37,8 +37,6 @@ public class OddItemCommandExecutor implements CommandExecutor {
                     case 0:
                         if (sender instanceof Player) {
                             ItemStack itemStack = ((Player) sender).getItemInHand();
-                            if (itemStack.getTypeId() > 255)
-                                itemStack.setDurability((short) 0);
                             sender.sendMessage(OddItem.getAliases(itemStack).toString());
                             return true;
                         }
