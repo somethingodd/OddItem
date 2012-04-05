@@ -69,7 +69,14 @@ public class OddItemAliases implements ConfigurationSerializable {
     }
 
     public Collection<String> getAliases(ItemStack itemStack) {
-        return aliases.get(itemStack);
+        Collection<String> itemAliases = aliases.get(itemStack);
+
+        if (itemAliases == null) {
+            itemStack.setDurability((short) 0);
+            itemAliases = aliases.get(itemStack);
+        }
+
+        return itemAliases;
     }
 
     public ItemStack getItemStack(String query) {
